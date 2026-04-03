@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+backend/__pycache__/
+*.pyc
+.env
+
+# Large Datasets (Very Important for GitHub)
+archive/
+dataset/
+organized_archive/
+
+# Build outputs
+dist/
+build/
+.vercel/
+
+# Logs
+*.log
+
+# IDE files
+.vscode/
+.idea/
