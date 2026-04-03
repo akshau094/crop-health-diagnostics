@@ -1,0 +1,25 @@
+services:
+  # Backend Service
+  - type: web
+    name: crop-health-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+    rootDirectory: backend
+
+  # Frontend Service
+  - type: web
+    name: crop-health-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    rootDirectory: frontend
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: crop-health-backend
+          property: host
