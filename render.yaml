@@ -9,6 +9,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.10.0
     rootDirectory: backend
+    plan: free
 
   # Frontend Service
   - type: web
@@ -17,6 +18,7 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     rootDirectory: frontend
+    plan: free
     envVars:
       - key: VITE_API_URL
         fromService:
