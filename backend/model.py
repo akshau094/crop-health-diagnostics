@@ -5,11 +5,6 @@ from PIL import Image
 import io
 import json
 import os
-import httpx
-
-# OpenRouter API Configuration
-OPENROUTER_API_KEY = "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"
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Full PlantVillage Labels for more accurate detection
 LABELS = [
@@ -93,84 +88,14 @@ class PlantDiseaseModel:
         
         # Mapping to interventions/information from organized dataset
         info = self.get_detailed_info(prediction)
-        ai_analysis = None
-        
-        # Enhance with AI
-        ai_info = self.get_ai_detailed_info(prediction, language)
-        if ai_info:
-            ai_analysis = {
-                "description": str(ai_info.get("description", "")),
-                "how_to_fix": ai_info.get("how_to_fix", "")
-            }
-            
-            # Ensure how_to_fix is a string for consistency
-            if isinstance(ai_analysis["how_to_fix"], list):
-                ai_analysis["how_to_fix"] = ". ".join([str(step).strip().rstrip('.') for step in ai_analysis["how_to_fix"]]) + "."
-            
-            # Use AI translations for the main fields if available
-            info["description"] = ai_analysis["description"]
-            info["how_to_fix"] = ai_analysis["how_to_fix"]
         
         return {
             "prediction": prediction,
             "intervention": info["how_to_fix"],
             "status": "Healthy" if "healthy" in prediction.lower() else "Diseased",
             "info": info["description"],
-            "ai_analysis": ai_analysis
+            "ai_analysis": None
         }
-
-    def get_ai_detailed_info(self, label, language="English"):
-        """Uses OpenRouter API to get a concise, summarized diagnostic report and intervention plan in the requested language"""
-        disease_name = label.replace("___", " ").replace("_", " ")
-        is_healthy = "healthy" in label.lower()
-        
-        if is_healthy:
-            prompt = (
-                f"The plant '{disease_name}' is healthy.\n"
-                f"Provide a concise summary and 3 quick tips for maintaining its health in {language}.\n"
-                "Format your response as a JSON with two keys:\n"
-                "1. 'description': A brief positive summary.\n"
-                "2. 'how_to_fix': 3 short bullet points for maintenance.\n"
-                "Return ONLY the JSON object."
-            )
-        else:
-            prompt = (
-                f"As an expert plant pathologist, provide a CONCISE and SUMMARIZED diagnostic report for: '{disease_name}' in {language}.\n"
-                "Do not be overly wordy. Provide the most critical information only.\n"
-                "Your response must include:\n"
-                "1. Summary: A brief explanation of the cause and primary symptoms (max 3-4 sentences).\n"
-                "2. Intervention: A clear, step-by-step plan with the 5 most effective actions (max 5 steps).\n\n"
-                "Format your response as a JSON with two keys:\n"
-                "1. 'description': The brief summary covering cause and symptoms.\n"
-                "2. 'how_to_fix': The 5-step intervention plan.\n"
-                f"IMPORTANT: All text must be in {language}.\n"
-                "Return ONLY the JSON object."
-            )
-
-        try:
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(
-                    OPENROUTER_URL,
-                    headers={
-                        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "http://localhost:8006",
-                        "X-Title": "Crop Health Diagnostics"
-                    },
-                    json={
-                        "model": "google/gemini-2.0-flash-001",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "response_format": {"type": "json_object"}
-                    }
-                )
-                
-                if response.status_code == 200:
-                    ai_content = response.json()["choices"][0]["message"]["content"]
-                    return json.loads(ai_content)
-        except Exception as e:
-            print(f"OpenRouter API Error: {str(e)}")
-        
-        return None
 
     def get_detailed_info(self, label):
         # First try loading from the organized dataset info
