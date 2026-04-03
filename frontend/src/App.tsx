@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, DragEvent } from 'react'
+import { useState, type ChangeEvent, type DragEvent } from 'react'
 
 interface PredictionResult {
   success: boolean;
